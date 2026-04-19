@@ -368,6 +368,14 @@ function startOfWeek(d) {
     x.setDate(x.getDate() + diff);
     return x;
 }
+// On Sat/Sun, the "current" school week is the upcoming one, not the
+// week that just ended.
+function currentSchoolWeekMonday(today) {
+    const monday = startOfWeek(today);
+    const dow = today.getDay();
+    if (dow === 0 || dow === 6) return addDays(monday, 7);
+    return monday;
+}
 function addDays(d, n) {
     const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     x.setDate(x.getDate() + n);
@@ -408,7 +416,7 @@ function readWeekFromHash() {
     const params = new URLSearchParams(h);
     const w = params.get("w");
     const d = w ? parseIsoDate(w) : null;
-    return d ? startOfWeek(d) : startOfWeek(new Date());
+    return d ? startOfWeek(d) : currentSchoolWeekMonday(new Date());
 }
 function writeWeekToHash(monday) {
     const params = new URLSearchParams(location.hash.replace(/^#/, ""));
@@ -622,7 +630,7 @@ function navigate(deltaWeeks) {
 els.prev.addEventListener("click", () => navigate(-1));
 els.next.addEventListener("click", () => navigate(1));
 els.today.addEventListener("click", () => {
-    history.replaceState(null, "", "#w=" + fmtIsoDate(startOfWeek(new Date())));
+    history.replaceState(null, "", "#w=" + fmtIsoDate(currentSchoolWeekMonday(new Date())));
     load();
 });
 els.print.addEventListener("click", () => window.print());
