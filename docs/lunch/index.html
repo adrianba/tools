@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Genesee Hill Lunch</title>
+<style>
+:root {
+    --accent: #428fb8;
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --line: #e3e3e3;
+    --bg: #fafafa;
+    --card-bg: #ffffff;
+    --side-ink: #555;
+    --badge-bg: #f0f0f0;
+    --badge-ink: #555;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+}
+
+.page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.site-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.title-block h1 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.title-block .week-range {
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-size: 1rem;
+}
+
+.nav {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.nav button {
+    font: inherit;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    background: var(--card-bg);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--ink);
+}
+
+.nav button:hover { border-color: var(--accent); color: var(--accent); }
+.nav button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+.nav button.primary:hover { color: white; opacity: 0.9; }
+
+.week-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 1100px) { .week-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px)  { .week-grid { grid-template-columns: 1fr; } }
+
+.day {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 14px 14px 16px;
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
+}
+
+.day-header {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
+
+.day-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.day-date {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.section-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 12px 0 4px;
+}
+.section-label:first-child { margin-top: 0; }
+
+.entrees {
+    list-style: none;
+    margin: 0 0 6px;
+    padding: 0;
+}
+
+.entrees li {
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: var(--ink);
+    padding: 6px 0;
+    border-bottom: 1px dotted var(--line);
+}
+.entrees li:last-child { border-bottom: none; }
+
+.sides {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    color: var(--side-ink);
+    font-size: 0.88rem;
+}
+
+.sides li {
+    padding: 2px 0;
+}
+
+.allergens {
+    margin-top: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.allergen {
+    font-size: 0.68rem;
+    background: var(--badge-bg);
+    color: var(--badge-ink);
+    padding: 1px 6px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.empty-day {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 0.92rem;
+    margin: auto 0;
+    text-align: center;
+}
+
+.status {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+}
+
+.status.error { color: #b3261e; }
+
+.spinner {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--line);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.print-footer {
+    display: none;
+}
+
+/* ============ PRINT STYLES ============ */
+@media print {
+    @page { size: letter; margin: 0.5in; }
+
+    :root {
+        --accent: #000;
+        --ink: #000;
+        --muted: #000;
+        --line: #888;
+        --bg: #fff;
+        --card-bg: #fff;
+        --side-ink: #333;
+        --shadow: none;
+    }
+
+    html, body {
+        background: #fff;
+        color: #000;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 10pt;
+        line-height: 1.3;
+    }
+
+    .page { max-width: none; margin: 0; padding: 0; }
+
+    .no-print, .nav, .allergens { display: none !important; }
+
+    .site-header {
+        border-bottom: 2px solid #000;
+        padding-bottom: 6px;
+        margin-bottom: 10px;
+    }
+
+    .title-block h1 {
+        font-size: 16pt;
+        font-weight: 700;
+    }
+
+    .title-block .week-range {
+        font-size: 11pt;
+        color: #000;
+    }
+
+    .week-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+    }
+
+    .day {
+        page-break-inside: avoid;
+        break-inside: avoid;
+        border: 1px solid #000;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 8px;
+        min-height: 0;
+    }
+
+    .day-header {
+        border-bottom: 1px solid #000;
+        padding-bottom: 4px;
+        margin-bottom: 6px;
+    }
+
+    .day-name {
+        color: #000;
+        font-size: 10pt;
+    }
+
+    .day-date {
+        color: #000;
+        font-size: 8.5pt;
+    }
+
+    .section-label {
+        color: #000;
+        font-size: 7.5pt;
+        margin: 6px 0 2px;
+    }
+
+    .entrees li {
+        font-size: 10pt;
+        font-weight: 700;
+        padding: 3px 0;
+        border-bottom: 1px dotted #888;
+    }
+
+    .sides {
+        font-size: 8.5pt;
+        color: #333;
+    }
+
+    .sides li { padding: 1px 0; }
+
+    .empty-day { font-size: 8.5pt; color: #555; }
+
+    .print-footer {
+        display: block;
+        text-align: center;
+        margin-top: 12px;
+        padding-top: 6px;
+        border-top: 1px solid #000;
+        font-size: 8pt;
+        color: #000;
+    }
+}
+</style>
+</head>
+<body>
+<div class="page">
+    <header class="site-header">
+        <div class="title-block">
+            <h1 id="schoolName">Genesee Hill Lunch</h1>
+            <p class="week-range" id="weekRange">&nbsp;</p>
+        </div>
+        <nav class="nav no-print" aria-label="Week navigation">
+            <button id="prevBtn" type="button" aria-label="Previous week">‹ Prev</button>
+            <button id="todayBtn" type="button" class="primary">This week</button>
+            <button id="nextBtn" type="button" aria-label="Next week">Next ›</button>
+            <button id="printBtn" type="button" aria-label="Print this week">Print</button>
+        </nav>
+    </header>
+
+    <main id="content">
+        <div class="status" id="loading">
+            <div class="spinner" aria-hidden="true"></div>
+            <div>Loading lunch menu…</div>
+        </div>
+    </main>
+
+    <footer class="print-footer" id="printFooter"></footer>
+</div>
+
+<script type="module">
+const API_BASE = "https://api.mealviewer.com/api/v4/school";
+const SCHOOL = "GeneseeHill";
+const LANG = "1";
+
+const ENTREE_TYPES = new Set(["entree", "ck", "grab & go", "grab and go", "grab&go"]);
+const SIDE_TYPES = new Set(["daily fruit", "daily vegetable", "sides", "side"]);
+
+const els = {
+    schoolName: document.getElementById("schoolName"),
+    weekRange: document.getElementById("weekRange"),
+    content: document.getElementById("content"),
+    prev: document.getElementById("prevBtn"),
+    today: document.getElementById("todayBtn"),
+    next: document.getElementById("nextBtn"),
+    print: document.getElementById("printBtn"),
+    printFooter: document.getElementById("printFooter"),
+};
+
+// ----- date helpers -----
+function startOfWeek(d) {
+    const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const dow = x.getDay(); // 0=Sun..6=Sat
+    const diff = dow === 0 ? -6 : 1 - dow; // back to Monday
+    x.setDate(x.getDate() + diff);
+    return x;
+}
+function addDays(d, n) {
+    const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    x.setDate(x.getDate() + n);
+    return x;
+}
+function fmtApiDate(d) {
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${m}-${day}-${d.getFullYear()}`;
+}
+function fmtIsoDate(d) {
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${d.getFullYear()}-${m}-${day}`;
+}
+function parseIsoDate(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if (!m) return null;
+    return new Date(+m[1], +m[2] - 1, +m[3]);
+}
+function fmtRange(monday, friday) {
+    const sameMonth = monday.getMonth() === friday.getMonth();
+    const sameYear = monday.getFullYear() === friday.getFullYear();
+    const monthA = monday.toLocaleDateString(undefined, { month: "long" });
+    const monthB = friday.toLocaleDateString(undefined, { month: "long" });
+    if (sameMonth && sameYear) {
+        return `${monthA} ${monday.getDate()}–${friday.getDate()}, ${monday.getFullYear()}`;
+    }
+    if (sameYear) {
+        return `${monthA} ${monday.getDate()} – ${monthB} ${friday.getDate()}, ${monday.getFullYear()}`;
+    }
+    return `${monthA} ${monday.getDate()}, ${monday.getFullYear()} – ${monthB} ${friday.getDate()}, ${friday.getFullYear()}`;
+}
+
+// ----- url hash state -----
+function readWeekFromHash() {
+    const h = location.hash.replace(/^#/, "");
+    const params = new URLSearchParams(h);
+    const w = params.get("w");
+    const d = w ? parseIsoDate(w) : null;
+    return d ? startOfWeek(d) : startOfWeek(new Date());
+}
+function writeWeekToHash(monday) {
+    const params = new URLSearchParams(location.hash.replace(/^#/, ""));
+    params.set("w", fmtIsoDate(monday));
+    const next = "#" + params.toString();
+    if (location.hash !== next) {
+        history.replaceState(null, "", next);
+    }
+}
+
+// ----- data fetch (with sessionStorage cache) -----
+async function fetchWeek(monday) {
+    const friday = addDays(monday, 4);
+    const cacheKey = `mv:${SCHOOL}:${fmtIsoDate(monday)}`;
+    try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) return JSON.parse(cached);
+    } catch {}
+    const url = `${API_BASE}/${SCHOOL}/${fmtApiDate(monday)}/${fmtApiDate(friday)}/${LANG}`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`Request failed (${r.status})`);
+    const data = await r.json();
+    try { sessionStorage.setItem(cacheKey, JSON.stringify(data)); } catch {}
+    return data;
+}
+
+// ----- render -----
+function classify(item) {
+    const t = String(item?.item_Type || "").trim().toLowerCase();
+    if (ENTREE_TYPES.has(t)) return "entree";
+    if (SIDE_TYPES.has(t)) return "side";
+    // Fallback: unknown types treated as entrees so nothing important is hidden
+    return "entree";
+}
+
+function collectLunchItems(daySchedule) {
+    const lunch = (daySchedule.menuBlocks || []).find(
+        b => String(b?.blockName || "").toLowerCase() === "lunch"
+    );
+    if (!lunch) return null;
+    const lines = lunch?.cafeteriaLineList?.data || [];
+    const items = [];
+    for (const line of lines) {
+        const list = line?.foodItemList?.data || [];
+        for (const it of list) items.push(it);
+    }
+    return items;
+}
+
+function dedupeByName(items) {
+    const seen = new Set();
+    const out = [];
+    for (const it of items) {
+        const name = String(it?.item_Name || "").trim();
+        if (!name) continue;
+        const key = name.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(it);
+    }
+    return out;
+}
+
+function el(tag, attrs = {}, ...children) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+        if (k === "class") e.className = v;
+        else if (k === "text") e.textContent = v;
+        else e.setAttribute(k, v);
+    }
+    for (const c of children) {
+        if (c == null) continue;
+        e.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    }
+    return e;
+}
+
+function renderItem(item, kind) {
+    const li = el("li");
+    li.appendChild(document.createTextNode(item.item_Name));
+    const allergens = (item.allergens || [])
+        .map(a => a?.name || a)
+        .filter(Boolean);
+    if (allergens.length) {
+        const wrap = el("div", { class: "allergens no-print" });
+        for (const a of allergens) {
+            wrap.appendChild(el("span", { class: "allergen", text: a }));
+        }
+        li.appendChild(wrap);
+    }
+    return li;
+}
+
+function renderDay(monday, offset, schedule) {
+    const date = addDays(monday, offset);
+    const dayEl = el("section", { class: "day" });
+    const header = el("div", { class: "day-header" });
+    header.appendChild(el("div", {
+        class: "day-name",
+        text: date.toLocaleDateString(undefined, { weekday: "long" }),
+    }));
+    header.appendChild(el("div", {
+        class: "day-date",
+        text: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+    }));
+    dayEl.appendChild(header);
+
+    const items = schedule ? collectLunchItems(schedule) : null;
+    if (!items || items.length === 0) {
+        dayEl.appendChild(el("div", {
+            class: "empty-day",
+            text: "No lunch service",
+        }));
+        return dayEl;
+    }
+
+    const entrees = dedupeByName(items.filter(i => classify(i) === "entree"));
+    const sides = dedupeByName(items.filter(i => classify(i) === "side"));
+
+    if (entrees.length) {
+        dayEl.appendChild(el("div", { class: "section-label", text: "Main options" }));
+        const ul = el("ul", { class: "entrees" });
+        for (const it of entrees) ul.appendChild(renderItem(it, "entree"));
+        dayEl.appendChild(ul);
+    }
+    if (sides.length) {
+        dayEl.appendChild(el("div", { class: "section-label", text: "Sides" }));
+        const ul = el("ul", { class: "sides" });
+        for (const it of sides) ul.appendChild(renderItem(it, "side"));
+        dayEl.appendChild(ul);
+    }
+    return dayEl;
+}
+
+function renderWeek(monday, data) {
+    const friday = addDays(monday, 4);
+    els.weekRange.textContent = fmtRange(monday, friday);
+
+    const schoolName = data?.physicalLocation?.name;
+    if (schoolName) els.schoolName.textContent = `${schoolName} Lunch`;
+    const color = data?.physicalLocation?.schoolSettings?.schoolColor;
+    if (color && /^#[0-9a-f]{3,8}$/i.test(color)) {
+        document.documentElement.style.setProperty("--accent", color);
+    }
+
+    const byDateKey = new Map();
+    for (const sched of data?.menuSchedules || []) {
+        const di = sched?.dateInformation;
+        if (di?.dateKey) byDateKey.set(String(di.dateKey), sched);
+    }
+
+    const grid = el("div", { class: "week-grid" });
+    for (let i = 0; i < 5; i++) {
+        const d = addDays(monday, i);
+        const key = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+        const sched = byDateKey.get(key);
+        grid.appendChild(renderDay(monday, i, sched));
+    }
+    els.content.replaceChildren(grid);
+
+    const printedOn = new Date().toLocaleDateString(undefined, {
+        year: "numeric", month: "long", day: "numeric",
+    });
+    els.printFooter.textContent = `Printed ${printedOn}`;
+}
+
+function renderError(err, monday) {
+    const friday = addDays(monday, 4);
+    els.weekRange.textContent = fmtRange(monday, friday);
+    const wrap = el("div", { class: "status error" });
+    wrap.appendChild(el("div", { text: `Couldn’t load the menu. ${err?.message || ""}` }));
+    const btn = el("button", { class: "primary", style: "margin-top:12px;padding:8px 14px;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;", text: "Retry" });
+    btn.addEventListener("click", () => load());
+    wrap.appendChild(btn);
+    els.content.replaceChildren(wrap);
+}
+
+function showLoading(monday) {
+    const friday = addDays(monday, 4);
+    els.weekRange.textContent = fmtRange(monday, friday);
+    const wrap = el("div", { class: "status" });
+    wrap.appendChild(el("div", { class: "spinner" }));
+    wrap.appendChild(el("div", { text: "Loading lunch menu…" }));
+    els.content.replaceChildren(wrap);
+}
+
+// ----- main -----
+let currentMonday = null;
+
+async function load() {
+    const monday = readWeekFromHash();
+    currentMonday = monday;
+    writeWeekToHash(monday);
+    showLoading(monday);
+    try {
+        const data = await fetchWeek(monday);
+        if (currentMonday !== monday) return; // stale
+        renderWeek(monday, data);
+    } catch (e) {
+        if (currentMonday !== monday) return;
+        renderError(e, monday);
+    }
+}
+
+function navigate(deltaWeeks) {
+    const next = addDays(currentMonday || readWeekFromHash(), deltaWeeks * 7);
+    history.replaceState(null, "", "#w=" + fmtIsoDate(next));
+    load();
+}
+
+els.prev.addEventListener("click", () => navigate(-1));
+els.next.addEventListener("click", () => navigate(1));
+els.today.addEventListener("click", () => {
+    history.replaceState(null, "", "#w=" + fmtIsoDate(startOfWeek(new Date())));
+    load();
+});
+els.print.addEventListener("click", () => window.print());
+window.addEventListener("hashchange", load);
+
+load();
+</script>
+</body>
+</html>
