@@ -127,6 +127,30 @@ html, body {
     color: var(--ink);
 }
 
+.filter-control {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+}
+
+.filter-control select { flex: 1; min-width: 0; }
+
+.clear-filter-btn {
+    font: inherit;
+    font-size: 1rem;
+    line-height: 1;
+    width: 34px;
+    flex: none;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--card-bg);
+    color: var(--muted);
+    cursor: pointer;
+}
+.clear-filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+.clear-filter-btn:disabled { opacity: 0.4; cursor: default; }
+.clear-filter-btn:disabled:hover { border-color: var(--line); color: var(--muted); }
+
 .result-count {
     margin-left: auto;
     align-self: center;
@@ -287,15 +311,21 @@ footer.note {
     <div class="filters" id="filters" hidden>
         <div class="filter-field">
             <label for="categoryFilter">Class type</label>
-            <select id="categoryFilter">
-                <option value="all">All</option>
-            </select>
+            <div class="filter-control">
+                <select id="categoryFilter">
+                    <option value="all">All</option>
+                </select>
+                <button type="button" id="clearCategoryBtn" class="clear-filter-btn" title="Reset to All" aria-label="Clear class type filter">&times;</button>
+            </div>
         </div>
         <div class="filter-field">
             <label for="instructorFilter">Instructor</label>
-            <select id="instructorFilter">
-                <option value="all">All</option>
-            </select>
+            <div class="filter-control">
+                <select id="instructorFilter">
+                    <option value="all">All</option>
+                </select>
+                <button type="button" id="clearInstructorBtn" class="clear-filter-btn" title="Reset to All" aria-label="Clear instructor filter">&times;</button>
+            </div>
         </div>
         <div class="result-count" id="resultCount"></div>
     </div>
@@ -331,6 +361,8 @@ const els = {
     filters: document.getElementById("filters"),
     categoryFilter: document.getElementById("categoryFilter"),
     instructorFilter: document.getElementById("instructorFilter"),
+    clearCategoryBtn: document.getElementById("clearCategoryBtn"),
+    clearInstructorBtn: document.getElementById("clearInstructorBtn"),
     resultCount: document.getElementById("resultCount"),
     refreshBtn: document.getElementById("refreshBtn"),
 };
@@ -535,6 +567,14 @@ function populateFilters(events) {
     const prefs = loadFilterPrefs();
     els.categoryFilter.value = categories.includes(prefs.category) ? prefs.category : "all";
     els.instructorFilter.value = instructors.includes(prefs.instructor) ? prefs.instructor : "all";
+    updateClearButtons();
+}
+
+// Enable/disable each "clear filter" button depending on whether that
+// filter is currently set to anything other than "All".
+function updateClearButtons() {
+    els.clearCategoryBtn.disabled = els.categoryFilter.value === "all";
+    els.clearInstructorBtn.disabled = els.instructorFilter.value === "all";
 }
 
 // ----- sortable columns -----
@@ -698,8 +738,20 @@ async function load(bypassCache) {
     }
 }
 
-els.categoryFilter.addEventListener("change", () => { saveFilterPrefs(); renderFilteredList(); });
-els.instructorFilter.addEventListener("change", () => { saveFilterPrefs(); renderFilteredList(); });
+els.categoryFilter.addEventListener("change", () => { saveFilterPrefs(); updateClearButtons(); renderFilteredList(); });
+els.instructorFilter.addEventListener("change", () => { saveFilterPrefs(); updateClearButtons(); renderFilteredList(); });
+els.clearCategoryBtn.addEventListener("click", () => {
+    els.categoryFilter.value = "all";
+    saveFilterPrefs();
+    updateClearButtons();
+    renderFilteredList();
+});
+els.clearInstructorBtn.addEventListener("click", () => {
+    els.instructorFilter.value = "all";
+    saveFilterPrefs();
+    updateClearButtons();
+    renderFilteredList();
+});
 els.refreshBtn.addEventListener("click", () => load(true));
 
 load(false);
