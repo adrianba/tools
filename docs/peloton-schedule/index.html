@@ -64,6 +64,12 @@ html, body {
     font-size: 0.95rem;
 }
 
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .actions button {
     font: inherit;
     padding: 8px 14px;
@@ -74,6 +80,15 @@ html, body {
     color: var(--ink);
 }
 .actions button:hover { border-color: var(--accent); color: var(--accent); }
+
+.book-link {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    white-space: nowrap;
+}
+.book-link:hover { text-decoration: underline; }
 
 .filters {
     display: flex;
@@ -264,6 +279,7 @@ footer.note {
             <p class="subtitle" id="windowLabel">&nbsp;</p>
         </div>
         <div class="actions">
+            <a id="bookLink" class="book-link" href="https://studio.onepeloton.com/new-york/schedule" target="_blank" rel="noopener noreferrer">Book a class &#8594;</a>
             <button id="refreshBtn" type="button">Refresh</button>
         </div>
     </header>
