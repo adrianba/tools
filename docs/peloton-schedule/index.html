@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Peloton Studios New York — Class Schedule</title>
+<style>
+:root {
+    --accent: #c8102e;
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --line: #e3e3e3;
+    --bg: #fafafa;
+    --card-bg: #ffffff;
+    --badge-bg: #f0f0f0;
+    --badge-ink: #444;
+    --full-bg: #fdeceb;
+    --full-ink: #a3291a;
+    --open-bg: #eaf6ec;
+    --open-ink: #1e7a34;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+}
+
+.page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.site-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+}
+
+.title-block h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.title-block .subtitle {
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+.actions button {
+    font: inherit;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    background: var(--card-bg);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--ink);
+}
+.actions button:hover { border-color: var(--accent); color: var(--accent); }
+
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: flex-end;
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+}
+
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 200px;
+}
+
+.filter-field label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.filter-field select {
+    font: inherit;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--ink);
+}
+
+.result-count {
+    margin-left: auto;
+    align-self: center;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.schedule-wrap {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    overflow-x: auto;
+}
+
+table.schedule {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+table.schedule thead th {
+    text-align: left;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    padding: 10px 12px;
+    border-bottom: 2px solid var(--line);
+    white-space: nowrap;
+}
+
+table.schedule tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+}
+
+table.schedule tbody tr:last-child td { border-bottom: none; }
+table.schedule tbody tr:hover { background: #fcfcfc; }
+
+.when .date { font-weight: 600; }
+.when .duration { color: var(--muted); font-size: 0.82rem; }
+
+.class-name { font-weight: 600; }
+
+.badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    background: var(--badge-bg);
+    color: var(--badge-ink);
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.status-pill {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+.status-pill.full { background: var(--full-bg); color: var(--full-ink); }
+.status-pill.open { background: var(--open-bg); color: var(--open-ink); }
+
+.waitlist-count { font-variant-numeric: tabular-nums; }
+
+.venue-name { color: var(--muted); font-size: 0.85rem; }
+
+.status, .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+}
+
+.status.error { color: #a3291a; }
+
+.spinner {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--line);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.retry-btn {
+    margin-top: 12px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+}
+
+footer.note {
+    margin-top: 16px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-align: center;
+}
+
+@media (max-width: 760px) {
+    table.schedule thead { display: none; }
+    table.schedule, table.schedule tbody, table.schedule tbody tr, table.schedule tbody td {
+        display: block;
+        width: 100%;
+    }
+    table.schedule tbody tr {
+        border-bottom: 1px solid var(--line);
+        padding: 10px 12px;
+    }
+    table.schedule tbody td {
+        border-bottom: none;
+        padding: 3px 0;
+    }
+    table.schedule tbody td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        margin-bottom: 1px;
+    }
+    .result-count { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+    <header class="site-header">
+        <div class="title-block">
+            <h1>Peloton Studios New York</h1>
+            <p class="subtitle" id="windowLabel">&nbsp;</p>
+        </div>
+        <div class="actions">
+            <button id="refreshBtn" type="button">Refresh</button>
+        </div>
+    </header>
+
+    <div class="filters" id="filters" hidden>
+        <div class="filter-field">
+            <label for="categoryFilter">Class type</label>
+            <select id="categoryFilter">
+                <option value="all">All</option>
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="instructorFilter">Instructor</label>
+            <select id="instructorFilter">
+                <option value="all">All</option>
+            </select>
+        </div>
+        <div class="result-count" id="resultCount"></div>
+    </div>
+
+    <main id="content">
+        <div class="status" id="loading">
+            <div class="spinner" aria-hidden="true"></div>
+            <div>Loading class schedule…</div>
+        </div>
+    </main>
+
+    <footer class="note">
+        Data from Peloton Studios New York's public schedule. Sorted with the
+        furthest-future class first and the soonest upcoming class last.
+        This is an unofficial use of the studio's booking widget and may
+        stop working if Peloton changes it.
+    </footer>
+</div>
+
+<script type="module">
+const API_URL = "https://schedule.studio.onepeloton.com/api/v2/events";
+const PROVIDER_ID = "7248695"; // Peloton Studios New York (only verified provider)
+const STUDIO_TIMEZONE = "America/New_York";
+const WINDOW_DAYS_AHEAD = 120; // generous, arbitrary upper bound — not a claim about the real publish horizon
+const HEADERS = {
+    "Accept": "application/json",
+    "Teamup-Request-Mode": "customer",
+    "Teamup-Provider-ID": PROVIDER_ID,
+};
+
+const els = {
+    windowLabel: document.getElementById("windowLabel"),
+    content: document.getElementById("content"),
+    filters: document.getElementById("filters"),
+    categoryFilter: document.getElementById("categoryFilter"),
+    instructorFilter: document.getElementById("instructorFilter"),
+    resultCount: document.getElementById("resultCount"),
+    refreshBtn: document.getElementById("refreshBtn"),
+};
+
+// ----- timezone-aware date helpers -----
+function nyParts(date) {
+    const fmt = new Intl.DateTimeFormat("en-CA", {
+        timeZone: STUDIO_TIMEZONE,
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", hour12: false,
+    });
+    const parts = fmt.formatToParts(date);
+    const map = {};
+    for (const p of parts) map[p.type] = p.value;
+    return map;
+}
+
+function nyDateTimeParam(date, timeOverride) {
+    const p = nyParts(date);
+    const time = timeOverride || `${p.hour}:${p.minute}`;
+    return `${p.year}-${p.month}-${p.day}T${time}`;
+}
+
+function nyDateOnly(date) {
+    const p = nyParts(date);
+    return `${p.year}-${p.month}-${p.day}`;
+}
+
+function formatEventWhen(startsAt, venueTimezone) {
+    const start = new Date(startsAt);
+    const tz = venueTimezone || STUDIO_TIMEZONE;
+    const fmt = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        weekday: "short", month: "short", day: "numeric",
+        hour: "numeric", minute: "2-digit",
+    });
+    return fmt.format(start);
+}
+
+function formatDuration(startsAt, endsAt) {
+    const start = new Date(startsAt);
+    const end = new Date(endsAt);
+    const minutes = Math.round((end - start) / 60000);
+    if (!Number.isFinite(minutes) || minutes <= 0) return "";
+    if (minutes % 60 === 0) {
+        const hrs = minutes / 60;
+        return `${hrs} hr${hrs !== 1 ? "s" : ""}`;
+    }
+    return `${minutes} min`;
+}
+
+function formatWindowLabel(lowerDate, upperDate) {
+    const fmt = new Intl.DateTimeFormat("en-US", {
+        timeZone: STUDIO_TIMEZONE, month: "short", day: "numeric", year: "numeric",
+    });
+    return `${fmt.format(lowerDate)} – ${fmt.format(upperDate)} (New York time)`;
+}
+
+// ----- data access -----
+function cacheKey(lowerDate) {
+    // Cached per NY calendar day: multiple loads within the same day reuse
+    // the same fetched dataset rather than re-fetching every page on every
+    // visit. A full day's granularity is enough for a schedule that spans
+    // months; it does not affect correctness of what is displayed.
+    return `peloton:events:${PROVIDER_ID}:${nyDateOnly(lowerDate)}`;
+}
+
+async function fetchAllEvents(lowerDate, upperDate) {
+    const params = new URLSearchParams({
+        local_starts_at_gte: nyDateTimeParam(lowerDate),
+        local_starts_at_lte: nyDateTimeParam(upperDate, "23:59"),
+        status: "active",
+        sort: "-start",
+        page_size: "100",
+        expand: "instructors,venue,offering_type,offering_type.category",
+    });
+
+    let url = `${API_URL}?${params.toString()}`;
+    const results = [];
+    let guard = 0;
+    while (url) {
+        if (++guard > 50) throw new Error("Too many pages; aborting to avoid an infinite loop.");
+        const res = await fetch(url, { headers: HEADERS });
+        if (!res.ok) {
+            throw new Error(`Schedule request failed (${res.status} ${res.statusText})`);
+        }
+        const data = await res.json();
+        if (Array.isArray(data.results)) results.push(...data.results);
+        url = data.next || null;
+    }
+    return results;
+}
+
+async function loadEvents(bypassCache) {
+    const now = new Date();
+    const upper = new Date(now.getTime() + WINDOW_DAYS_AHEAD * 24 * 60 * 60 * 1000);
+    const key = cacheKey(now);
+
+    if (!bypassCache) {
+        try {
+            const cached = sessionStorage.getItem(key);
+            if (cached) return { events: JSON.parse(cached), lower: now, upper };
+        } catch {}
+    }
+
+    const events = await fetchAllEvents(now, upper);
+    try { sessionStorage.setItem(key, JSON.stringify(events)); } catch {}
+    return { events, lower: now, upper };
+}
+
+// ----- field accessors (defensive against un-expanded fields) -----
+function getCategoryName(ev) {
+    const name = ev?.offering_type?.category?.name;
+    return typeof name === "string" && name ? name : "Uncategorized";
+}
+function getInstructorNames(ev) {
+    if (!Array.isArray(ev?.instructors)) return [];
+    return ev.instructors.map(i => i?.name).filter(n => typeof n === "string" && n);
+}
+function getVenueName(ev) {
+    const name = ev?.venue?.name;
+    return typeof name === "string" && name ? name : "Unknown studio";
+}
+function getVenueTimezone(ev) {
+    const tz = ev?.venue?.timezone;
+    return typeof tz === "string" && tz ? tz : null;
+}
+
+// ----- rendering helpers -----
+function el(tag, attrs = {}, ...children) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+        if (k === "class") e.className = v;
+        else if (k === "text") e.textContent = v;
+        else if (k === "dataset") Object.assign(e.dataset, v);
+        else e.setAttribute(k, v);
+    }
+    for (const c of children) {
+        if (c == null) continue;
+        e.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    }
+    return e;
+}
+
+function uniqueSorted(values) {
+    return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
+}
+
+function populateFilters(events) {
+    const categories = uniqueSorted(events.map(getCategoryName));
+    const instructorSet = new Set();
+    for (const ev of events) for (const n of getInstructorNames(ev)) instructorSet.add(n);
+    const instructors = uniqueSorted(Array.from(instructorSet));
+
+    for (const [select, values] of [
+        [els.categoryFilter, categories],
+        [els.instructorFilter, instructors],
+    ]) {
+        while (select.options.length > 1) select.remove(1);
+        for (const v of values) select.appendChild(el("option", { value: v, text: v }));
+    }
+}
+
+function applyFilters(events) {
+    const category = els.categoryFilter.value;
+    const instructor = els.instructorFilter.value;
+    return events.filter(ev => {
+        if (category !== "all" && getCategoryName(ev) !== category) return false;
+        if (instructor !== "all" && !getInstructorNames(ev).includes(instructor)) return false;
+        return true;
+    });
+}
+
+function renderRow(ev) {
+    const instructorNames = getInstructorNames(ev);
+    const instructorText = instructorNames.length ? instructorNames.join(", ") : "Unknown instructor";
+    const isFull = ev?.is_full === true;
+    const waitingCount = Number.isFinite(ev?.waiting_count) ? ev.waiting_count : 0;
+
+    const tr = el("tr");
+
+    const whenCell = el("td", { "data-label": "When", class: "when" });
+    whenCell.appendChild(el("div", { class: "date", text: formatEventWhen(ev.starts_at, getVenueTimezone(ev)) }));
+    const duration = formatDuration(ev.starts_at, ev.ends_at);
+    if (duration) whenCell.appendChild(el("div", { class: "duration", text: duration }));
+    tr.appendChild(whenCell);
+
+    tr.appendChild(el("td", { "data-label": "Class", class: "class-name", text: ev?.name || "Untitled class" }));
+    tr.appendChild(el("td", { "data-label": "Type" }, el("span", { class: "badge", text: getCategoryName(ev) })));
+    tr.appendChild(el("td", { "data-label": "Instructor", text: instructorText }));
+    tr.appendChild(el("td", { "data-label": "Studio", class: "venue-name", text: getVenueName(ev) }));
+    tr.appendChild(el("td", { "data-label": "Full?" },
+        el("span", { class: `status-pill ${isFull ? "full" : "open"}`, text: isFull ? "Full" : "Open" })
+    ));
+    tr.appendChild(el("td", { "data-label": "Waitlist", class: "waitlist-count", text: String(waitingCount) }));
+
+    return tr;
+}
+
+function renderTable(events) {
+    const table = el("table", { class: "schedule" });
+    const thead = el("thead", {}, el("tr", {},
+        el("th", { text: "When" }),
+        el("th", { text: "Class" }),
+        el("th", { text: "Type" }),
+        el("th", { text: "Instructor" }),
+        el("th", { text: "Studio" }),
+        el("th", { text: "Full?" }),
+        el("th", { text: "Waitlist" }),
+    ));
+    const tbody = el("tbody");
+    for (const ev of events) tbody.appendChild(renderRow(ev));
+    table.appendChild(thead);
+    table.appendChild(tbody);
+
+    const wrap = el("div", { class: "schedule-wrap" });
+    wrap.appendChild(table);
+    return wrap;
+}
+
+function renderEmpty(message) {
+    return el("div", { class: "empty-state", text: message });
+}
+
+function renderErrorState(err, onRetry) {
+    const wrap = el("div", { class: "status error" });
+    wrap.appendChild(el("div", { text: `Couldn't load the schedule. ${err?.message || ""}` }));
+    const btn = el("button", { class: "retry-btn", text: "Retry" });
+    btn.addEventListener("click", onRetry);
+    wrap.appendChild(btn);
+    return wrap;
+}
+
+function renderLoading(label) {
+    const wrap = el("div", { class: "status" });
+    wrap.appendChild(el("div", { class: "spinner" }));
+    wrap.appendChild(el("div", { text: label }));
+    return wrap;
+}
+
+// ----- state -----
+let allEvents = [];
+let hasData = false;
+
+function renderFilteredList() {
+    const filtered = applyFilters(allEvents);
+    els.resultCount.textContent = `${filtered.length} of ${allEvents.length} classes shown`;
+
+    if (allEvents.length === 0) {
+        els.content.replaceChildren(renderEmpty("No classes found in the available schedule window."));
+        return;
+    }
+    if (filtered.length === 0) {
+        els.content.replaceChildren(renderEmpty("No classes match the selected filters."));
+        return;
+    }
+    els.content.replaceChildren(renderTable(filtered));
+}
+
+async function load(bypassCache) {
+    els.filters.hidden = true;
+    els.content.replaceChildren(renderLoading("Loading class schedule…"));
+    try {
+        const { events, lower, upper } = await loadEvents(bypassCache);
+        allEvents = events;
+        hasData = true;
+        els.windowLabel.textContent = `${formatWindowLabel(lower, upper)} · ${events.length} classes found`;
+        populateFilters(allEvents);
+        els.filters.hidden = false;
+        renderFilteredList();
+    } catch (e) {
+        hasData = false;
+        els.content.replaceChildren(renderErrorState(e, () => load(true)));
+    }
+}
+
+els.categoryFilter.addEventListener("change", renderFilteredList);
+els.instructorFilter.addEventListener("change", renderFilteredList);
+els.refreshBtn.addEventListener("click", () => load(true));
+
+load(false);
+</script>
+</body>
+</html>
