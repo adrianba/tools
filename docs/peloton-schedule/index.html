@@ -465,6 +465,32 @@ function uniqueSorted(values) {
     return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
 }
 
+// ----- filter preference persistence -----
+const FILTER_PREFS_KEY = "peloton:filterPrefs:v1";
+
+function loadFilterPrefs() {
+    try {
+        const raw = localStorage.getItem(FILTER_PREFS_KEY);
+        if (!raw) return { category: "all", instructor: "all" };
+        const parsed = JSON.parse(raw);
+        return {
+            category: typeof parsed?.category === "string" ? parsed.category : "all",
+            instructor: typeof parsed?.instructor === "string" ? parsed.instructor : "all",
+        };
+    } catch {
+        return { category: "all", instructor: "all" };
+    }
+}
+
+function saveFilterPrefs() {
+    try {
+        localStorage.setItem(FILTER_PREFS_KEY, JSON.stringify({
+            category: els.categoryFilter.value,
+            instructor: els.instructorFilter.value,
+        }));
+    } catch {}
+}
+
 function populateFilters(events) {
     const categories = uniqueSorted(events.map(getCategoryName));
     const instructorSet = new Set();
@@ -478,6 +504,13 @@ function populateFilters(events) {
         while (select.options.length > 1) select.remove(1);
         for (const v of values) select.appendChild(el("option", { value: v, text: v }));
     }
+
+    // Restore the previously saved selection, but only if that value is
+    // still among the options actually present in this dataset; otherwise
+    // fall back to "all" rather than silently selecting nothing.
+    const prefs = loadFilterPrefs();
+    els.categoryFilter.value = categories.includes(prefs.category) ? prefs.category : "all";
+    els.instructorFilter.value = instructors.includes(prefs.instructor) ? prefs.instructor : "all";
 }
 
 // ----- sortable columns -----
@@ -640,8 +673,8 @@ async function load(bypassCache) {
     }
 }
 
-els.categoryFilter.addEventListener("change", renderFilteredList);
-els.instructorFilter.addEventListener("change", renderFilteredList);
+els.categoryFilter.addEventListener("change", () => { saveFilterPrefs(); renderFilteredList(); });
+els.instructorFilter.addEventListener("change", () => { saveFilterPrefs(); renderFilteredList(); });
 els.refreshBtn.addEventListener("click", () => load(true));
 
 load(false);
