@@ -144,6 +144,13 @@ table.schedule thead th {
     white-space: nowrap;
 }
 
+table.schedule thead th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+table.schedule thead th.sortable:hover { color: var(--accent); }
+table.schedule thead th.sorted { color: var(--accent); }
+
 table.schedule tbody td {
     padding: 10px 12px;
     border-bottom: 1px solid var(--line);
@@ -285,10 +292,11 @@ footer.note {
     </main>
 
     <footer class="note">
-        Data from Peloton Studios New York's public schedule. Sorted with the
-        furthest-future class first and the soonest upcoming class last.
-        This is an unofficial use of the studio's booking widget and may
-        stop working if Peloton changes it.
+        Data from Peloton Studios New York's public schedule. Shown in
+        chronological order by default (soonest class first) — click a
+        column heading to sort by it, and click again to reverse the
+        order. This is an unofficial use of the studio's booking widget
+        and may stop working if Peloton changes it.
     </footer>
 </div>
 
@@ -381,7 +389,7 @@ async function fetchAllEvents(lowerDate, upperDate) {
         local_starts_at_gte: nyDateTimeParam(lowerDate),
         local_starts_at_lte: nyDateTimeParam(upperDate, "23:59"),
         status: "active",
-        sort: "-start",
+        sort: "start", // fetch order doesn't matter for display — the table is always re-sorted client-side (see sortEvents/sortState)
         page_size: "100",
         expand: "instructors,venue,offering_type,offering_type.category",
     });
@@ -472,6 +480,41 @@ function populateFilters(events) {
     }
 }
 
+// ----- sortable columns -----
+const SORT_COLUMNS = [
+    { key: "when", label: "When", getValue: ev => new Date(ev.starts_at).getTime() },
+    { key: "class", label: "Class", getValue: ev => (ev?.name || "").toLowerCase() },
+    { key: "type", label: "Type", getValue: ev => getCategoryName(ev).toLowerCase() },
+    { key: "instructor", label: "Instructor", getValue: ev => getInstructorNames(ev).join(", ").toLowerCase() },
+    { key: "studio", label: "Studio", getValue: ev => getVenueName(ev).toLowerCase() },
+    { key: "full", label: "Full?", getValue: ev => (ev?.is_full === true ? 1 : 0) },
+    { key: "waitlist", label: "Waitlist", getValue: ev => (Number.isFinite(ev?.waiting_count) ? ev.waiting_count : 0) },
+];
+
+// Default: chronological order, soonest class first.
+let sortState = { key: "when", dir: "asc" };
+
+function compareValues(a, b) {
+    if (a < b) return -1;
+    if (a > b) return 1;
+    return 0;
+}
+
+function sortEvents(events) {
+    const col = SORT_COLUMNS.find(c => c.key === sortState.key) || SORT_COLUMNS[0];
+    const withIndex = events.map((ev, i) => ({ ev, i }));
+    withIndex.sort((a, b) => {
+        let cmp = compareValues(col.getValue(a.ev), col.getValue(b.ev));
+        if (cmp === 0) {
+            // Stable, deterministic tiebreaker: chronological order, then original fetch order.
+            cmp = compareValues(new Date(a.ev.starts_at).getTime(), new Date(b.ev.starts_at).getTime());
+        }
+        if (cmp === 0) cmp = compareValues(a.i, b.i);
+        return sortState.dir === "asc" ? cmp : -cmp;
+    });
+    return withIndex.map(w => w.ev);
+}
+
 function applyFilters(events) {
     const category = els.categoryFilter.value;
     const instructor = els.instructorFilter.value;
@@ -510,15 +553,26 @@ function renderRow(ev) {
 
 function renderTable(events) {
     const table = el("table", { class: "schedule" });
-    const thead = el("thead", {}, el("tr", {},
-        el("th", { text: "When" }),
-        el("th", { text: "Class" }),
-        el("th", { text: "Type" }),
-        el("th", { text: "Instructor" }),
-        el("th", { text: "Studio" }),
-        el("th", { text: "Full?" }),
-        el("th", { text: "Waitlist" }),
-    ));
+    const headerRow = el("tr");
+    for (const col of SORT_COLUMNS) {
+        const isActive = sortState.key === col.key;
+        const arrow = isActive ? (sortState.dir === "asc" ? " ▲" : " ▼") : "";
+        const th = el("th", {
+            class: "sortable" + (isActive ? " sorted" : ""),
+            "aria-sort": isActive ? (sortState.dir === "asc" ? "ascending" : "descending") : "none",
+            text: col.label + arrow,
+        });
+        th.addEventListener("click", () => {
+            if (sortState.key === col.key) {
+                sortState.dir = sortState.dir === "asc" ? "desc" : "asc";
+            } else {
+                sortState = { key: col.key, dir: "asc" };
+            }
+            renderFilteredList();
+        });
+        headerRow.appendChild(th);
+    }
+    const thead = el("thead", {}, headerRow);
     const tbody = el("tbody");
     for (const ev of events) tbody.appendChild(renderRow(ev));
     table.appendChild(thead);
@@ -555,6 +609,7 @@ let hasData = false;
 
 function renderFilteredList() {
     const filtered = applyFilters(allEvents);
+    const sorted = sortEvents(filtered);
     els.resultCount.textContent = `${filtered.length} of ${allEvents.length} classes shown`;
 
     if (allEvents.length === 0) {
@@ -565,7 +620,7 @@ function renderFilteredList() {
         els.content.replaceChildren(renderEmpty("No classes match the selected filters."));
         return;
     }
-    els.content.replaceChildren(renderTable(filtered));
+    els.content.replaceChildren(renderTable(sorted));
 }
 
 async function load(bypassCache) {
