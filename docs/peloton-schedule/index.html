@@ -384,11 +384,21 @@ function formatDuration(startsAt, endsAt) {
     return `${minutes} min`;
 }
 
-function formatWindowLabel(lowerDate, upperDate) {
+// Label the header with the actual range of classes returned by the API,
+// not the (much wider) query window used to fetch them — this makes it
+// easy to see when the last currently-scheduled class actually is.
+function formatEventsRangeLabel(events) {
+    if (events.length === 0) return null;
+    let earliest = events[0].starts_at;
+    let latest = events[0].starts_at;
+    for (const ev of events) {
+        if (ev.starts_at < earliest) earliest = ev.starts_at;
+        if (ev.starts_at > latest) latest = ev.starts_at;
+    }
     const fmt = new Intl.DateTimeFormat("en-US", {
         timeZone: STUDIO_TIMEZONE, month: "short", day: "numeric", year: "numeric",
     });
-    return `${fmt.format(lowerDate)} – ${fmt.format(upperDate)} (New York time)`;
+    return `${fmt.format(new Date(earliest))} – ${fmt.format(new Date(latest))} (New York time)`;
 }
 
 // ----- data access -----
@@ -676,10 +686,11 @@ async function load(bypassCache) {
     els.filters.hidden = true;
     els.content.replaceChildren(renderLoading("Loading class schedule…"));
     try {
-        const { events, lower, upper } = await loadEvents(bypassCache);
+        const { events } = await loadEvents(bypassCache);
         allEvents = events;
         hasData = true;
-        els.windowLabel.textContent = `${formatWindowLabel(lower, upper)} · ${events.length} classes found`;
+        const rangeLabel = formatEventsRangeLabel(events) ?? "No classes currently scheduled";
+        els.windowLabel.textContent = `${rangeLabel} · ${events.length} classes found`;
         populateFilters(allEvents);
         els.filters.hidden = false;
         renderFilteredList();
